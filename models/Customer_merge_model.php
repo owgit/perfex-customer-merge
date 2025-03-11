@@ -700,6 +700,549 @@ class Customer_merge_model extends App_Model
     }
 
     /**
+     * Rollback a customer merge operation
+     * @param  int $merge_history_id The ID of the merge history record
+     * @return boolean|array         True if successful, error array if failed
+     */
+    public function rollback_merge($merge_history_id)
+    {
+        // Get the merge history record
+        $this->db->where('id', $merge_history_id);
+        $merge_history = $this->db->get(db_prefix() . 'customer_merge_history')->row();
+        
+        if (!$merge_history) {
+            return ['success' => false, 'message' => _l('merge_history_not_found')];
+        }
+        
+        // Check if the target customer still exists
+        $target_customer = $this->clients_model->get($merge_history->target_customer_id);
+        if (!$target_customer) {
+            return ['success' => false, 'message' => _l('target_customer_not_found')];
+        }
+        
+        // Start transaction
+        $this->db->trans_begin();
+        
+        try {
+            // Recreate the source customer
+            $source_customer_data = [
+                'company' => $merge_history->source_customer_name,
+                'datecreated' => date('Y-m-d H:i:s'),
+                'active' => 1
+            ];
+            
+            $this->db->insert(db_prefix() . 'clients', $source_customer_data);
+            $new_source_id = $this->db->insert_id();
+            
+            if (!$new_source_id) {
+                $this->db->trans_rollback();
+                return ['success' => false, 'message' => _l('failed_to_recreate_source_customer')];
+            }
+            
+            // Get the merged data
+            $merged_data = unserialize($merge_history->merged_data);
+            
+            // Move back related records based on merged data
+            foreach ($merged_data as $data_type) {
+                switch ($data_type) {
+                    case 'invoices':
+                        $this->rollback_related_records('invoices', 'clientid', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'estimates':
+                        $this->rollback_related_records('estimates', 'clientid', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'credit_notes':
+                        $this->rollback_related_records('creditnotes', 'clientid', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'projects':
+                        $this->rollback_related_records('projects', 'clientid', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'expenses':
+                        $this->rollback_related_records('expenses', 'clientid', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'proposals':
+                        $this->rollback_related_records('proposals', 'rel_id', $merge_history->target_customer_id, $new_source_id, $merge_history->date, "rel_type = 'customer'");
+                        break;
+                    case 'tickets':
+                        $this->rollback_related_records('tickets', 'userid', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'contracts':
+                        $this->rollback_related_records('contracts', 'client', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'files':
+                        $this->rollback_related_records('files', 'rel_id', $merge_history->target_customer_id, $new_source_id, $merge_history->date, "rel_type = 'customer'");
+                        break;
+                    case 'contacts':
+                        $this->rollback_contacts($merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'tasks':
+                        $this->rollback_related_records('tasks', 'rel_id', $merge_history->target_customer_id, $new_source_id, $merge_history->date, "rel_type = 'customer'");
+                        break;
+                    case 'payments':
+                        $this->rollback_payments($merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'notes':
+                        $this->rollback_related_records('notes', 'rel_id', $merge_history->target_customer_id, $new_source_id, $merge_history->date, "rel_type = 'customer'");
+                        break;
+                    case 'subscriptions':
+                        $this->rollback_related_records('subscriptions', 'clientid', $merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'customer_groups':
+                        $this->rollback_customer_groups($merge_history->target_customer_id, $new_source_id, $merge_history->date);
+                        break;
+                    case 'custom_fields':
+                        $this->rollback_custom_fields($merge_history->target_customer_id, $new_source_id);
+                        break;
+                    case 'customer_admins':
+                        $this->rollback_customer_admins($merge_history->target_customer_id, $new_source_id);
+                        break;
+                    // Add other data types as needed
+                }
+            }
+            
+            // Always rollback profile data (customer data)
+            $this->rollback_customer_data($merge_history->target_customer_id, $new_source_id, $merge_history->date);
+            
+            // Log rollback activity
+            $this->log_activity('Customer merge rollback: ' . $merge_history->source_customer_name . ' was recreated from ' . $merge_history->target_customer_name);
+            
+            // Mark the merge history as rolled back
+            $this->db->where('id', $merge_history_id);
+            $this->db->update(db_prefix() . 'customer_merge_history', ['rolled_back' => 1, 'rollback_date' => date('Y-m-d H:i:s')]);
+            
+            if ($this->db->trans_status() === FALSE) {
+                $this->db->trans_rollback();
+                return ['success' => false, 'message' => _l('rollback_failed')];
+            }
+            
+            $this->db->trans_commit();
+            return ['success' => true, 'message' => _l('rollback_successful'), 'new_customer_id' => $new_source_id];
+            
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Rollback related records from target customer to source customer
+     * @param  string $table           The table name
+     * @param  string $customer_field  The customer ID field name
+     * @param  int    $target_id       The target customer ID
+     * @param  int    $source_id       The source customer ID
+     * @param  string $merge_date      The date of the merge
+     * @param  string $additional_where Additional WHERE clause
+     * @return boolean
+     */
+    private function rollback_related_records($table, $customer_field, $target_id, $source_id, $merge_date, $additional_where = '')
+    {
+        // Get records created after the merge date
+        $this->db->where($customer_field, $target_id);
+        if (!empty($additional_where)) {
+            $this->db->where($additional_where);
+        }
+        
+        // Check if the table has a datecreated column
+        $table_fields = $this->db->list_fields(db_prefix() . $table);
+        $date_field = null;
+        
+        // Common date field names in Perfex CRM
+        $possible_date_fields = ['datecreated', 'date_created', 'dateadded', 'date_added', 'date'];
+        
+        foreach ($possible_date_fields as $field) {
+            if (in_array($field, $table_fields)) {
+                $date_field = $field;
+                break;
+            }
+        }
+        
+        // Only add the date condition if a date field was found
+        if ($date_field) {
+            $this->db->where($date_field . ' >=', $merge_date);
+        }
+        
+        $update_data = [$customer_field => $source_id];
+        $this->db->update(db_prefix() . $table, $update_data);
+        
+        return true;
+    }
+    
+    /**
+     * Rollback contacts from target customer to source customer
+     * @param  int    $target_id  The target customer ID
+     * @param  int    $source_id  The source customer ID
+     * @param  string $merge_date The date of the merge
+     * @return boolean
+     */
+    private function rollback_contacts($target_id, $source_id, $merge_date)
+    {
+        // First, let's get all contacts for the target customer, not just those created after the merge
+        // This is important because we need to handle primary contacts properly
+        $this->db->where('userid', $target_id);
+        $all_contacts = $this->db->get(db_prefix() . 'contacts')->result_array();
+        
+        if (empty($all_contacts)) {
+            return true; // No contacts to process
+        }
+        
+        // Find the primary contact for the target customer
+        $primary_contact = null;
+        foreach ($all_contacts as $contact) {
+            if ($contact['is_primary'] == 1) {
+                $primary_contact = $contact;
+                break;
+            }
+        }
+        
+        // Get contacts that were created after the merge date
+        $this->db->where('userid', $target_id);
+        $this->db->where('datecreated >=', $merge_date);
+        $new_contacts = $this->db->get(db_prefix() . 'contacts')->result_array();
+        
+        // Track if we've moved a primary contact
+        $moved_primary = false;
+        $moved_primary_id = null;
+        
+        // Move new contacts to the source customer
+        foreach ($new_contacts as $contact) {
+            $is_primary = ($contact['is_primary'] == 1);
+            
+            // If this is a primary contact, we'll need to handle it specially
+            if ($is_primary) {
+                $moved_primary = true;
+                $moved_primary_id = $contact['id'];
+            }
+            
+            // Update the contact's customer ID
+            $this->db->where('id', $contact['id']);
+            $this->db->update(db_prefix() . 'contacts', [
+                'userid' => $source_id,
+                // Temporarily set all contacts as non-primary
+                'is_primary' => 0
+            ]);
+            
+            // Update related records for this contact
+            $this->rollback_contact_related_records($contact['id'], $source_id);
+        }
+        
+        // Now handle the primary contact situation
+        
+        // First, check if the source customer already has any contacts
+        $this->db->where('userid', $source_id);
+        $source_contacts = $this->db->get(db_prefix() . 'contacts')->result_array();
+        
+        if (!empty($source_contacts)) {
+            // The source customer has contacts, let's determine which one should be primary
+            
+            if ($moved_primary) {
+                // We moved a primary contact, so make it primary again
+                $this->db->where('id', $moved_primary_id);
+                $this->db->update(db_prefix() . 'contacts', [
+                    'is_primary' => 1,
+                    'active' => 1 // Ensure the primary contact is active
+                ]);
+                
+                // Ensure all other contacts for this customer are not primary
+                $this->db->where('userid', $source_id);
+                $this->db->where('id !=', $moved_primary_id);
+                $this->db->update(db_prefix() . 'contacts', ['is_primary' => 0]);
+            } else {
+                // We didn't move a primary contact, so check if there's already a primary
+                $has_primary = false;
+                $primary_id = null;
+                
+                foreach ($source_contacts as $contact) {
+                    if ($contact['is_primary'] == 1) {
+                        $has_primary = true;
+                        $primary_id = $contact['id'];
+                        break;
+                    }
+                }
+                
+                if ($has_primary && $primary_id) {
+                    // Ensure the existing primary contact is active
+                    $this->db->where('id', $primary_id);
+                    $this->db->update(db_prefix() . 'contacts', ['active' => 1]);
+                } else if (!empty($source_contacts)) {
+                    // No primary contact, so make the first contact primary and active
+                    $this->db->where('id', $source_contacts[0]['id']);
+                    $this->db->update(db_prefix() . 'contacts', [
+                        'is_primary' => 1,
+                        'active' => 1
+                    ]);
+                }
+            }
+        } else if (!empty($new_contacts)) {
+            // The source customer only has the contacts we just moved
+            // Make the first one primary and active
+            $this->db->where('id', $new_contacts[0]['id']);
+            $this->db->update(db_prefix() . 'contacts', [
+                'is_primary' => 1,
+                'active' => 1
+            ]);
+        } else if ($primary_contact) {
+            // The source customer has no contacts, but we have a primary contact from the target
+            // Let's create a copy of the primary contact for the source customer
+            $contact_data = $primary_contact;
+            unset($contact_data['id']); // Remove ID to create a new record
+            $contact_data['userid'] = $source_id;
+            $contact_data['datecreated'] = date('Y-m-d H:i:s');
+            $contact_data['is_primary'] = 1; // Ensure it's set as primary
+            $contact_data['active'] = 1; // Ensure it's active
+            
+            $this->db->insert(db_prefix() . 'contacts', $contact_data);
+            $new_contact_id = $this->db->insert_id();
+            
+            if ($new_contact_id) {
+                // Copy contact permissions and other related data
+                $this->copy_contact_related_data($primary_contact['id'], $new_contact_id);
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Copy contact related data from one contact to another
+     * @param  int $source_contact_id The source contact ID
+     * @param  int $target_contact_id The target contact ID
+     * @return boolean
+     */
+    private function copy_contact_related_data($source_contact_id, $target_contact_id)
+    {
+        // Copy contact permissions
+        $this->db->where('userid', $source_contact_id);
+        $permissions = $this->db->get(db_prefix() . 'contact_permissions')->result_array();
+        
+        foreach ($permissions as $permission) {
+            $this->db->insert(db_prefix() . 'contact_permissions', [
+                'userid' => $target_contact_id,
+                'permission_id' => $permission['permission_id']
+            ]);
+        }
+        
+        // Copy custom fields
+        $this->db->where('relid', $source_contact_id);
+        $this->db->where('fieldto', 'contacts');
+        $custom_fields = $this->db->get(db_prefix() . 'customfieldsvalues')->result_array();
+        
+        foreach ($custom_fields as $field) {
+            $this->db->insert(db_prefix() . 'customfieldsvalues', [
+                'relid' => $target_contact_id,
+                'fieldid' => $field['fieldid'],
+                'fieldto' => 'contacts',
+                'value' => $field['value']
+            ]);
+        }
+        
+        return true;
+    }
+
+    /**
+     * Rollback payments from target customer to source customer
+     * @param  int    $target_id  The target customer ID
+     * @param  int    $source_id  The source customer ID
+     * @param  string $merge_date The date of the merge
+     * @return boolean
+     */
+    private function rollback_payments($target_id, $source_id, $merge_date)
+    {
+        // The invoicepaymentrecords table doesn't have a direct clientid column
+        // We need to join with the invoices table to get payments for a specific customer
+        
+        // Get invoices for the target customer
+        $this->db->where('clientid', $target_id);
+        $invoices = $this->db->get(db_prefix() . 'invoices')->result_array();
+        
+        if (empty($invoices)) {
+            return true; // No invoices to process
+        }
+        
+        // Extract invoice IDs
+        $invoice_ids = [];
+        foreach ($invoices as $invoice) {
+            $invoice_ids[] = $invoice['id'];
+        }
+        
+        // Get payments for these invoices
+        $this->db->where_in('invoiceid', $invoice_ids);
+        
+        // Check if the payments table has a date column
+        $table_fields = $this->db->list_fields(db_prefix() . 'invoicepaymentrecords');
+        $date_field = null;
+        
+        // Common date field names in Perfex CRM
+        $possible_date_fields = ['daterecorded', 'date', 'datecreated', 'date_created', 'dateadded', 'date_added'];
+        
+        foreach ($possible_date_fields as $field) {
+            if (in_array($field, $table_fields)) {
+                $date_field = $field;
+                break;
+            }
+        }
+        
+        // Only add the date condition if a date field was found
+        if ($date_field) {
+            $this->db->where($date_field . ' >=', $merge_date);
+        }
+        
+        $payments = $this->db->get(db_prefix() . 'invoicepaymentrecords')->result_array();
+        
+        // Get invoices for the source customer (newly created)
+        $this->db->where('clientid', $source_id);
+        $source_invoices = $this->db->get(db_prefix() . 'invoices')->result_array();
+        
+        // If no invoices have been moved to the source customer yet, we can't update payments
+        if (empty($source_invoices)) {
+            return true;
+        }
+        
+        // Create a mapping of invoice numbers to new invoice IDs
+        $invoice_map = [];
+        foreach ($invoices as $old_invoice) {
+            foreach ($source_invoices as $new_invoice) {
+                // Match invoices by number (assuming invoice numbers are unique)
+                if ($old_invoice['number'] == $new_invoice['number']) {
+                    $invoice_map[$old_invoice['id']] = $new_invoice['id'];
+                    break;
+                }
+            }
+        }
+        
+        // Update payment records to point to the new invoices
+        foreach ($payments as $payment) {
+            if (isset($invoice_map[$payment['invoiceid']])) {
+                // Update the payment to point to the new invoice
+                $this->db->where('id', $payment['id']);
+                $this->db->update(db_prefix() . 'invoicepaymentrecords', [
+                    'invoiceid' => $invoice_map[$payment['invoiceid']]
+                ]);
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Rollback customer groups from target customer to source customer
+     * @param  int    $target_id  The target customer ID
+     * @param  int    $source_id  The source customer ID
+     * @param  string $merge_date The date of the merge
+     * @return boolean
+     */
+    private function rollback_customer_groups($target_id, $source_id, $merge_date)
+    {
+        // Get customer groups for the target customer
+        $this->db->where('customer_id', $target_id);
+        $customer_groups = $this->db->get(db_prefix() . 'customer_groups')->result_array();
+        
+        // Add the same groups to the new source customer
+        foreach ($customer_groups as $group) {
+            $this->db->insert(db_prefix() . 'customer_groups', [
+                'customer_id' => $source_id,
+                'groupid' => $group['groupid']
+            ]);
+        }
+        
+        return true;
+    }
+
+    /**
+     * Rollback custom fields from target customer to source customer
+     * @param  int    $target_id  The target customer ID
+     * @param  int    $source_id  The source customer ID
+     * @return boolean
+     */
+    private function rollback_custom_fields($target_id, $source_id)
+    {
+        // Get custom fields for the target customer
+        $this->db->where('relid', $target_id);
+        $this->db->where('fieldto', 'customers');
+        $custom_fields = $this->db->get(db_prefix() . 'customfieldsvalues')->result_array();
+        
+        // Add the same custom fields to the new source customer
+        foreach ($custom_fields as $field) {
+            $this->db->insert(db_prefix() . 'customfieldsvalues', [
+                'relid' => $source_id,
+                'fieldid' => $field['fieldid'],
+                'fieldto' => 'customers',
+                'value' => $field['value']
+            ]);
+        }
+        
+        return true;
+    }
+
+    /**
+     * Rollback customer admins from target customer to source customer
+     * @param  int    $target_id  The target customer ID
+     * @param  int    $source_id  The source customer ID
+     * @return boolean
+     */
+    private function rollback_customer_admins($target_id, $source_id)
+    {
+        // Get customer admins for the target customer
+        $this->db->where('customer_id', $target_id);
+        $customer_admins = $this->db->get(db_prefix() . 'customer_admins')->result_array();
+        
+        // Add the same admins to the new source customer
+        foreach ($customer_admins as $admin) {
+            $this->db->insert(db_prefix() . 'customer_admins', [
+                'customer_id' => $source_id,
+                'staff_id' => $admin['staff_id'],
+                'date_assigned' => date('Y-m-d H:i:s')
+            ]);
+        }
+        
+        return true;
+    }
+
+    /**
+     * Rollback customer data from target customer to source customer
+     * @param  int    $target_id  The target customer ID
+     * @param  int    $source_id  The source customer ID
+     * @param  string $merge_date The date of the merge
+     * @return boolean
+     */
+    private function rollback_customer_data($target_id, $source_id, $merge_date)
+    {
+        // Get the target customer data
+        $target_customer = $this->clients_model->get($target_id);
+        
+        if (!$target_customer) {
+            return false;
+        }
+        
+        // Update the source customer with basic data from the target
+        $update_data = [
+            'phonenumber' => $target_customer->phonenumber,
+            'country' => $target_customer->country,
+            'city' => $target_customer->city,
+            'zip' => $target_customer->zip,
+            'state' => $target_customer->state,
+            'address' => $target_customer->address,
+            'website' => $target_customer->website,
+            'default_currency' => $target_customer->default_currency,
+            'default_language' => $target_customer->default_language,
+            'billing_street' => $target_customer->billing_street,
+            'billing_city' => $target_customer->billing_city,
+            'billing_state' => $target_customer->billing_state,
+            'billing_zip' => $target_customer->billing_zip,
+            'billing_country' => $target_customer->billing_country,
+            'shipping_street' => $target_customer->shipping_street,
+            'shipping_city' => $target_customer->shipping_city,
+            'shipping_state' => $target_customer->shipping_state,
+            'shipping_zip' => $target_customer->shipping_zip,
+            'shipping_country' => $target_customer->shipping_country
+        ];
+        
+        $this->db->where('userid', $source_id);
+        $this->db->update(db_prefix() . 'clients', $update_data);
+        
+        return true;
+    }
+
+    /**
      * Get customers for merge
      * @param  string $search Search term
      * @param  int $exclude_id Customer ID to exclude
@@ -831,5 +1374,52 @@ class Customer_merge_model extends App_Model
             log_activity('Customer Merge Error: Failed to merge notes - ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Rollback contact related records
+     * @param  int $contact_id The contact ID
+     * @param  int $source_id  The source customer ID
+     * @return boolean
+     */
+    private function rollback_contact_related_records($contact_id, $source_id)
+    {
+        // Update consent records
+        $this->db->where('contact_id', $contact_id);
+        $consents = $this->db->get(db_prefix() . 'consents')->result_array();
+        
+        foreach ($consents as $consent) {
+            // No need to update anything here as consents are linked to contact_id which remains the same
+        }
+        
+        // Update email tracking
+        $this->db->where('contact_id', $contact_id);
+        $email_tracking = $this->db->get(db_prefix() . 'mail_queue_attachments')->result_array();
+        
+        foreach ($email_tracking as $tracking) {
+            // No need to update anything here as tracking is linked to contact_id which remains the same
+        }
+        
+        // Update vault entries
+        $this->db->where('contact_id', $contact_id);
+        $vault_entries = $this->db->get(db_prefix() . 'vault')->result_array();
+        
+        foreach ($vault_entries as $entry) {
+            // Update customer_id in vault entries
+            $this->db->where('id', $entry['id']);
+            $this->db->update(db_prefix() . 'vault', ['customer_id' => $source_id]);
+        }
+        
+        // Update contact activity
+        $this->db->where('contact_id', $contact_id);
+        $activities = $this->db->get(db_prefix() . 'contact_activity')->result_array();
+        
+        foreach ($activities as $activity) {
+            // Update customer_id in contact activities
+            $this->db->where('id', $activity['id']);
+            $this->db->update(db_prefix() . 'contact_activity', ['customer_id' => $source_id]);
+        }
+        
+        return true;
     }
 } 

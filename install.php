@@ -16,6 +16,8 @@ if (!$CI->db->table_exists(db_prefix() . 'customer_merge_history')) {
         `date` DATETIME NOT NULL,
         `staff_id` INT(11) NOT NULL,
         `merged_data` TEXT NULL,
+        `rolled_back` TINYINT(1) NOT NULL DEFAULT 0,
+        `rollback_date` DATETIME NULL,
         PRIMARY KEY (`id`),
         KEY `target_customer_id` (`target_customer_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=' . $CI->db->char_set . ';');

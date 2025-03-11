@@ -74,4 +74,19 @@ $lang['profile'] = 'Profile';
 // Module information
 $lang['module_developed_by'] = 'Developed by';
 $lang['module_version'] = 'Version';
-$lang['support'] = 'Support'; 
+$lang['support'] = 'Support';
+
+// Rollback functionality
+$lang['rollback_merge'] = 'Rollback Merge';
+$lang['confirm_rollback_merge'] = 'Are you sure you want to rollback this merge? This will create a new customer with the original name and move recent data back to it.';
+$lang['rollback_successful'] = 'Merge rollback successful. A new customer has been created with the original data.';
+$lang['rollback_failed'] = 'Failed to rollback the merge operation.';
+$lang['merge_history_not_found'] = 'Merge history record not found.';
+$lang['target_customer_not_found'] = 'Target customer not found. It may have been deleted.';
+$lang['failed_to_recreate_source_customer'] = 'Failed to recreate the source customer.';
+$lang['invalid_merge_history_id'] = 'Invalid merge history ID.';
+$lang['merge_already_rolled_back'] = 'This merge has already been rolled back.';
+$lang['rolled_back'] = 'Rolled Back';
+$lang['active'] = 'Active';
+$lang['status'] = 'Status';
+$lang['options'] = 'Options'; 

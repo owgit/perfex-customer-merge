@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Customer Merge
 Description: Merge duplicate customers with all their associated data
-Version: 1.0.0
+Version: 1.0.2
 Requires at least: 2.3.*
 Author: Uygar Duzgun
 Author URI: https://uygarduzgun.com

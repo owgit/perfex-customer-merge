@@ -38,6 +38,8 @@
                                         <th><?php echo _l('merged_by'); ?></th>
                                         <th><?php echo _l('merged_data'); ?></th>
                                         <th><?php echo _l('date'); ?></th>
+                                        <th><?php echo _l('status'); ?></th>
+                                        <th><?php echo _l('options'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -66,6 +68,27 @@
                                             </td>
                                             <td data-order="<?php echo strtotime($history['date']); ?>">
                                                 <?php echo _dt($history['date']); ?>
+                                            </td>
+                                            <td>
+                                                <?php if (isset($history['rolled_back']) && $history['rolled_back'] == 1): ?>
+                                                    <span class="label label-info"><?php echo _l('rolled_back'); ?></span>
+                                                    <?php if (isset($history['rollback_date']) && !empty($history['rollback_date'])): ?>
+                                                        <br><small><?php echo _dt($history['rollback_date']); ?></small>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <span class="label label-success"><?php echo _l('active'); ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (has_permission('customer_merge', '', 'create') && (!isset($history['rolled_back']) || $history['rolled_back'] == 0)): ?>
+                                                    <a href="<?php echo admin_url('customer_merge/rollback/' . $history['id']); ?>" 
+                                                       class="btn btn-danger btn-icon" 
+                                                       onclick="return confirm('<?php echo _l('confirm_rollback_merge'); ?>');" 
+                                                       data-toggle="tooltip" 
+                                                       title="<?php echo _l('rollback_merge'); ?>">
+                                                        <i class="fa fa-undo"></i>
+                                                    </a>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php } ?>

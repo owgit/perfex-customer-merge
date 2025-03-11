@@ -223,6 +223,54 @@ class Customer_merge extends AdminController
     }
 
     /**
+     * Rollback a merge operation
+     * @param int $merge_history_id The ID of the merge history record
+     */
+    public function rollback($merge_history_id)
+    {
+        if (!has_permission('customer_merge', '', 'create')) {
+            access_denied('customer_merge');
+        }
+
+        if (!$merge_history_id) {
+            set_alert('danger', _l('invalid_merge_history_id'));
+            redirect(admin_url('customer_merge'));
+        }
+
+        // Get the merge history record
+        $this->db->where('id', $merge_history_id);
+        $merge_history = $this->db->get(db_prefix() . 'customer_merge_history')->row();
+        
+        if (!$merge_history) {
+            set_alert('danger', _l('merge_history_not_found'));
+            redirect(admin_url('customer_merge'));
+        }
+        
+        // Check if already rolled back
+        if ($merge_history->rolled_back) {
+            set_alert('warning', _l('merge_already_rolled_back'));
+            redirect(admin_url('customer_merge'));
+        }
+
+        // Perform the rollback
+        $result = $this->customer_merge_model->rollback_merge($merge_history_id);
+        
+        if ($result['success']) {
+            set_alert('success', $result['message']);
+            
+            // Redirect to the newly created customer
+            if (isset($result['new_customer_id'])) {
+                redirect(admin_url('clients/client/' . $result['new_customer_id']));
+            } else {
+                redirect(admin_url('customer_merge'));
+            }
+        } else {
+            set_alert('danger', $result['message']);
+            redirect(admin_url('customer_merge'));
+        }
+    }
+
+    /**
      * Get customer contacts
      * @return JSON
      */

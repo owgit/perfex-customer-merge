@@ -64,4 +64,19 @@ $lang['target'] = 'Mål';
 // Module information
 $lang['module_developed_by'] = 'Utvecklad av';
 $lang['module_version'] = 'Version';
-$lang['support'] = 'Support'; 
+$lang['support'] = 'Support';
+
+// Rollback functionality
+$lang['rollback_merge'] = 'Återställ sammanslagning';
+$lang['confirm_rollback_merge'] = 'Är du säker på att du vill återställa denna sammanslagning? Detta kommer att skapa en ny kund med det ursprungliga namnet och flytta tillbaka nyligen tillagd data.';
+$lang['rollback_successful'] = 'Återställning av sammanslagning lyckades. En ny kund har skapats med originaldata.';
+$lang['rollback_failed'] = 'Misslyckades med att återställa sammanslagningen.';
+$lang['merge_history_not_found'] = 'Sammanslagningshistorik hittades inte.';
+$lang['target_customer_not_found'] = 'Målkunden hittades inte. Den kan ha raderats.';
+$lang['failed_to_recreate_source_customer'] = 'Misslyckades med att återskapa källkunden.';
+$lang['invalid_merge_history_id'] = 'Ogiltigt ID för sammanslagningshistorik.';
+$lang['merge_already_rolled_back'] = 'Denna sammanslagning har redan återställts.';
+$lang['rolled_back'] = 'Återställd';
+$lang['active'] = 'Aktiv';
+$lang['status'] = 'Status';
+$lang['options'] = 'Alternativ'; 

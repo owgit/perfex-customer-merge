@@ -36,6 +36,7 @@ A powerful module for Perfex CRM that allows administrators to merge duplicate c
 - **Merge History**: Track all customer merges with detailed logs
 - **Permission-Based Access**: Control who can view and perform merges
 - **Multilingual Support**: Available in multiple languages (English and Swedish)
+- **Rollback Functionality**: Undo merge operations
 
 ## 📋 Requirements
 
@@ -47,16 +48,19 @@ A powerful module for Perfex CRM that allows administrators to merge duplicate c
 
 ### Manual Installation
 
-1. **Download** the latest release from the [Releases page](https://github.com/owgit/perfex-customer-merge/releases)
+1. **Download** the latest release from the [Releases page](https://github.com/owgit/customer_merge/releases)
 2. **Extract** the downloaded ZIP file
 3. **Upload** the `customer_merge` folder to the `modules` directory of your Perfex CRM installation
 4. **Navigate** to `Setup → Modules` in your Perfex CRM admin panel
 5. **Find** the Customer Merge module and click the "Activate" button
 6. **Refresh** your browser to complete the installation
-### Download Zip
+
+### Using Composer
+
 ```bash
-https://github.com/owgit/perfex-customer-merge/releases/download/Latest/perfex_crm_customer_merge.zip
+composer require owgit/customer_merge
 ```
+
 ### Using Git
 
 ```bash
@@ -78,6 +82,27 @@ git clone https://github.com/owgit/customer_merge.git
 3. **Configure Merge Options**: Select which data elements to merge
 4. **Review Customer Data**: Optionally select specific customer data fields to transfer
 5. **Confirm and Execute**: Review the warning message, check the confirmation box, and click "Merge Customers"
+
+### Viewing Merge History
+
+1. Go to `Customers → Customer Merge`
+2. View the list of all merge operations performed
+
+### Rolling Back a Merge
+
+If you need to undo a merge operation:
+
+1. Go to `Customers → Customer Merge`
+2. Find the merge operation you want to rollback
+3. Click the rollback button (undo icon)
+4. Confirm the rollback
+
+The rollback process will:
+- Create a new customer with the original source customer name
+- Move data created after the merge back to the new customer
+- Mark the merge operation as rolled back
+
+**Note:** The rollback process is not a perfect undo. It creates a new customer (with a new ID) and only moves data created after the merge. Data that existed before the merge will remain with the target customer.
 
 ## 📊 Data Handling
 
@@ -135,7 +160,7 @@ The module adds two custom permissions:
 | Permission | Description |
 |------------|-------------|
 | View Customer Merge | Allows staff to view the merge history |
-| Create Customer Merge | Allows staff to perform customer merges |
+| Create Customer Merge | Allows staff to perform customer merges and rollback merges |
 
 By default, only administrators have full permissions. You can modify permissions in `Setup → Staff → Roles`.
 
@@ -181,7 +206,19 @@ Contributions are welcome! Here's how you can help:
 
 ## 📝 Changelog
 
-### Version 1.0.0 (2025-03-11)
+### Version 1.0.2 (2025-03-11)
+- Added comprehensive rollback functionality for all customer data types
+- Enhanced database column detection for better compatibility
+- Fixed issues with contacts and primary contacts during rollback
+- Improved error handling in rollback process
+- Fixed "Unknown column" errors in various tables
+
+### Version 1.0.1 (2023-06-15)
+- Added rollback functionality to undo merge operations
+- Added status indicators in merge history
+- Added Swedish translations for rollback functionality
+
+### Version 1.0.0 (2023-06-01)
 - Initial release
 - Support for merging all customer data
 - Primary contact handling
@@ -204,4 +241,4 @@ This module is released under the [MIT License](LICENSE).
 
 ---
 
-Developed with ❤️ by [Uygar Duzgun](https://uygarduzgun.com) Vibe Coding
+Developed with ❤️ by [Uygar Duzgun](https://uygarduzgun.com) 
