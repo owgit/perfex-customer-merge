@@ -1,6 +1,6 @@
 {
-    "name": "owgit/customer_merge",
-    "description": "A powerful module for Perfex CRM that allows administrators to merge duplicate customer records while preserving all associated data.",
+    "name": "owgit/perfex-customer-merge",
+    "description": "Customer Merge Module for Perfex CRM - Merge duplicate customers while preserving all associated data and relationships.",
     "type": "perfex-module",
     "license": "MIT",
     "authors": [
@@ -15,12 +15,15 @@
     },
     "keywords": [
         "perfex",
-        "crm",
+        "perfexcrm",
         "perfex-crm",
+        "crm",
         "module",
         "customer",
         "merge",
-        "duplicate"
+        "duplicate",
+        "deduplicate",
+        "customer-management"
     ],
     "homepage": "https://github.com/owgit/customer_merge",
     "support": {

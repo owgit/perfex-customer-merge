@@ -1,14 +1,14 @@
-# Customer Merge Module for Perfex CRM
+# Perfex CRM Customer Merge Module
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/owgit/customer_merge)
 [![Perfex CRM](https://img.shields.io/badge/Perfex%20CRM-2.3.2+-green.svg)](https://perfexcrm.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A powerful module for Perfex CRM that allows administrators to merge duplicate customer records while preserving all associated data.
+A powerful module for Perfex CRM that allows administrators to merge duplicate customer records while preserving all associated data. Simplify your customer database management by combining duplicate entries without losing any important information.
 
-![Customer Merge Module](https://via.placeholder.com/800x400?text=Customer+Merge+Module)
+![Perfex CRM Customer Merge Module](https://via.placeholder.com/800x400?text=Perfex+CRM+Customer+Merge+Module)
 
-## 📋 Table of Contents
+## �� Table of Contents
 
 - [Features](#features)
 - [Requirements](#requirements)
