@@ -184,7 +184,7 @@ Contributions are welcome! Here's how you can help:
 
 ## 📝 Changelog
 
-### Version 1.0.0 (2024-03-11)
+### Version 1.0.0 (2025-03-11)
 - Initial release
 - Support for merging all customer data
 - Primary contact handling
