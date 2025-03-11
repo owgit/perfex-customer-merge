@@ -1,0 +1,19 @@
+# GitHub Push Instructions
+
+# After creating your GitHub repository, run these commands:
+
+# For HTTPS authentication:
+git remote add origin https://github.com/YOUR_USERNAME/perfex-customer-merge.git
+git branch -M main
+git push -u origin main
+
+# OR if you're using SSH authentication:
+# git remote add origin git@github.com:YOUR_USERNAME/perfex-customer-merge.git
+# git branch -M main
+# git push -u origin main
+
+# Replace YOUR_USERNAME with your actual GitHub username
+
+# After pushing, don't forget to:
+# 1. Add the topics listed in GITHUB_REPO_INFO.md
+# 2. Create a release as described in GITHUB_INSTRUCTIONS.md 
