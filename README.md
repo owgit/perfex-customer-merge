@@ -53,13 +53,10 @@ A powerful module for Perfex CRM that allows administrators to merge duplicate c
 4. **Navigate** to `Setup → Modules` in your Perfex CRM admin panel
 5. **Find** the Customer Merge module and click the "Activate" button
 6. **Refresh** your browser to complete the installation
-
-### Using Composer
-
+### Download Zip
 ```bash
-composer require owgit/customer_merge
+https://github.com/owgit/perfex-customer-merge/releases/download/Latest/perfex_crm_customer_merge.zip
 ```
-
 ### Using Git
 
 ```bash
