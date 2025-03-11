@@ -84,7 +84,7 @@ function customer_merge_add_menu_item()
             'name'     => _l('customer_merge'),
             'href'     => admin_url('customer_merge'),
             'position' => 6,
-            'icon'     => 'fa fa-compress',
+            'icon'     => 'fa fa-puzzle-piece',
             'parent_slug' => 'customers',
         ]);
     }

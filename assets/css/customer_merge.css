@@ -1,5 +1,29 @@
 /* Customer Merge Module CSS */
 
+/* Add styles for the module icon */
+.customer-merge-icon {
+    max-width: 100px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.customer-merge-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.customer-merge-header img {
+    margin-right: 15px;
+    width: 40px;
+    height: auto;
+}
+
+.customer-merge-header h4 {
+    margin: 0;
+    font-size: 18px;
+}
+
 .customer-details table {
     margin-bottom: 0;
 }

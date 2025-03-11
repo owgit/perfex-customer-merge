@@ -6,9 +6,11 @@
 
 A powerful module for Perfex CRM that allows administrators to merge duplicate customer records while preserving all associated data. Simplify your customer database management by combining duplicate entries without losing any important information.
 
-![Perfex CRM Customer Merge Module](https://via.placeholder.com/800x400?text=Perfex+CRM+Customer+Merge+Module)
+<p align="center">
+  <img src="assets/images/customer-merge-icon.png" alt="Perfex CRM Customer Merge Module" width="200">
+</p>
 
-## �� Table of Contents
+## 📋 Table of Contents
 
 - [Features](#features)
 - [Requirements](#requirements)

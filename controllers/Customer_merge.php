@@ -21,6 +21,7 @@ class Customer_merge extends AdminController
 
         $data['title'] = _l('customer_merge');
         $data['merge_history'] = $this->customer_merge_model->get_merge_history();
+        $data['icon'] = module_dir_url('customer_merge', 'assets/images/customer-merge-icon.png');
 
         $this->load->view('customer_merge/merge_history', $data);
     }
@@ -35,6 +36,9 @@ class Customer_merge extends AdminController
             access_denied('customer_merge');
         }
 
+        $data['title'] = _l('merge_customers');
+        $data['icon'] = module_dir_url('customer_merge', 'assets/images/customer-merge-icon.png');
+        
         if ($this->input->post()) {
             $source_customer_id = $this->input->post('source_customer');
             $target_customer_id = $this->input->post('target_customer');
@@ -65,7 +69,6 @@ class Customer_merge extends AdminController
             }
         }
 
-        $data['title'] = _l('merge_customers');
         $data['customer_id'] = $customer_id;
 
         if ($customer_id) {

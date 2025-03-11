@@ -6,6 +6,13 @@
             <div class="col-md-12">
                 <div class="panel_s">
                     <div class="panel-body">
+                        <div class="customer-merge-header">
+                            <?php if(isset($icon)): ?>
+                            <img src="<?php echo $icon; ?>" alt="<?php echo _l('customer_merge'); ?>">
+                            <?php endif; ?>
+                            <h4><?php echo _l('customer_merge'); ?></h4>
+                        </div>
+                        
                         <div class="_buttons">
                             <a href="<?php echo admin_url('customer_merge/merge'); ?>" class="btn btn-info pull-left display-block">
                                 <?php echo _l('merge_new_customers'); ?>

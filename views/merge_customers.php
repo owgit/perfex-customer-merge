@@ -6,7 +6,12 @@
             <div class="col-md-12">
                 <div class="panel_s">
                     <div class="panel-body">
-                        <h4 class="no-margin"><?php echo _l('merge_customers'); ?></h4>
+                        <div class="customer-merge-header">
+                            <?php if(isset($icon)): ?>
+                            <img src="<?php echo $icon; ?>" alt="<?php echo _l('merge_customers'); ?>">
+                            <?php endif; ?>
+                            <h4><?php echo _l('merge_customers'); ?></h4>
+                        </div>
                         <hr class="hr-panel-heading" />
                         
                         <?php echo form_open(admin_url('customer_merge/merge'), ['id' => 'merge-customers-form']); ?>
