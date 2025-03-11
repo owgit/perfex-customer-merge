@@ -207,4 +207,4 @@ This module is released under the [MIT License](LICENSE).
 
 ---
 
-Developed with ❤️ by [Uygar Duzgun](https://uygarduzgun.com) 
+Developed with ❤️ by [Uygar Duzgun](https://uygarduzgun.com) Vibe Coding
