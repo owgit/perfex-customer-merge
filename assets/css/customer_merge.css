@@ -1,0 +1,74 @@
+/* Customer Merge Module CSS */
+
+.customer-details table {
+    margin-bottom: 0;
+}
+
+.customer-details table td {
+    padding: 5px 8px !important;
+}
+
+#source-customer-details, #target-customer-details {
+    margin-top: 15px;
+}
+
+.panel-heading {
+    background-color: #f5f5f5;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.panel-title {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 16px;
+    color: inherit;
+}
+
+.merge-options-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.merge-warning {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #faebcc;
+    border-radius: 4px;
+    color: #8a6d3b;
+    background-color: #fcf8e3;
+}
+
+.merge-warning h4 {
+    margin-top: 0;
+    color: inherit;
+}
+
+.merge-warning p:last-child {
+    margin-bottom: 0;
+}
+
+/* Module Information Styling */
+.module-info {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.module-author, .module-support {
+    margin-bottom: 10px;
+}
+
+.module-author a, .module-support a {
+    color: #03a9f4;
+    text-decoration: none;
+}
+
+.module-author a:hover, .module-support a:hover {
+    text-decoration: underline;
+} 
