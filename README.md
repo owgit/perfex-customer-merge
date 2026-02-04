@@ -239,6 +239,17 @@ For support, bug reports, or feature requests, please:
 
 This module is released under the [MIT License](LICENSE).
 
+
 ---
 
-Developed with ❤️ by [Uygar Duzgun](https://uygarduzgun.com) 
+<div align="center">
+
+## 👤 Author
+
+**Uygar Duzgun**
+
+[![Website](https://img.shields.io/badge/Website-uygarduzgun.com-blue?style=flat-square\&logo=google-chrome)](https://uygarduzgun.com)
+[![GitHub](https://img.shields.io/badge/GitHub-owgit-181717?style=flat-square\&logo=github)](https://github.com/owgit)
+[![Buy Me a Coffee](https://img.shields.io/badge/Support-Buy%20Me%20a%20Coffee-FFDD00?style=flat-square\&logo=buy-me-a-coffee\&logoColor=black)](https://buymeacoffee.com/uygarduzgun)
+
+</div>
